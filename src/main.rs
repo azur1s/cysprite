@@ -57,6 +57,8 @@ fn hex_to_rgba(s: &String) -> Option<[u8; 4]> {
 #[macroquad::main("harcana - pixel art tool")]
 async fn main() {
     let mut grid = Grid::new(16, 16);
+
+    // How many pixel per cell (could be interpreted as zoom level)
     let mut grid_cell_size = 24;
 
     let mut primary_color: [u8; 4] = [255, 255, 255, 255];
@@ -148,6 +150,16 @@ async fn main() {
             ctx.set_style(style);
 
             // Panels
+            let grid_actions = egui::Window::new("Grid Actions").show(ctx, |ui| {
+                ui.label("Clear grid");
+                if ui.button("Clear").clicked() {
+                    grid.clear();
+                }
+
+                ui.label("Zoom");
+                ui.add(egui::Slider::new(&mut grid_cell_size, 4..=64).text("Zoom"));
+            });
+
             let colors = egui::Window::new("Colors").show(ctx, |ui| {
                 ui.label("Colors");
                 ui.horizontal(|ui| {
@@ -174,13 +186,6 @@ async fn main() {
                         secondary_color = color;
                     }
                 });
-            });
-
-            let grid_actions = egui::Window::new("Grid Actions").show(ctx, |ui| {
-                ui.label("Clear grid");
-                if ui.button("Clear").clicked() {
-                    grid.clear();
-                }
             });
 
             // Check if the GUI is using pointer
@@ -229,7 +234,7 @@ async fn main() {
 
             // Scroll handling
             grid_cell_size += mouse_wheel().1 as i32;
-            grid_cell_size = grid_cell_size.clamp(4, 128);
+            grid_cell_size = grid_cell_size.clamp(4, 64);
 
             // Keyboard handling
             if is_key_pressed(KeyCode::Space) {
