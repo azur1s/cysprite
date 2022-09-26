@@ -33,13 +33,36 @@ impl Grid {
     }
 }
 
-#[macroquad::main("Hello World")]
+fn hex_to_rgba(s: &String) -> Option<[u8; 4]> {
+    let s = s.trim_start_matches('#');
+
+    match s.len() {
+        6 => {
+            let r = u8::from_str_radix(&s[0..2], 16).ok()?;
+            let g = u8::from_str_radix(&s[2..4], 16).ok()?;
+            let b = u8::from_str_radix(&s[4..6], 16).ok()?;
+            Some([r, g, b, 255])
+        },
+        8 => {
+            let r = u8::from_str_radix(&s[0..2], 16).ok()?;
+            let g = u8::from_str_radix(&s[2..4], 16).ok()?;
+            let b = u8::from_str_radix(&s[4..6], 16).ok()?;
+            let a = u8::from_str_radix(&s[6..8], 16).ok()?;
+            Some([r, g, b, a])
+        },
+        _ => None,
+    }
+}
+
+#[macroquad::main("harcana - pixel art tool")]
 async fn main() {
     let mut grid = Grid::new(16, 16);
     let mut grid_cell_size = 24;
 
     let mut primary_color: [u8; 4] = [255, 255, 255, 255];
     let mut secondary_color: [u8; 4] = [255, 255, 255, 255];
+    let mut primary_color_input = String::new();
+    let mut secondary_color_input = String::new();
 
     // A bool for whether we are interacting with the GUI
     // so the mouse doesn't draw
@@ -128,8 +151,28 @@ async fn main() {
             let colors = egui::Window::new("Colors").show(ctx, |ui| {
                 ui.label("Colors");
                 ui.horizontal(|ui| {
+                    // Color wheel
                     ui.color_edit_button_srgba_unmultiplied(&mut primary_color);
+                    // Hex input
+                    ui.add(
+                        egui::TextEdit::singleline(&mut primary_color_input)
+                            .hint_text("#rrggbbaa")
+                            .desired_width(100.0));
+
+                    // If the hex is valid then set the color
+                    if let Some(color) = hex_to_rgba(&primary_color_input) {
+                        primary_color = color;
+                    }
+                });
+                ui.horizontal(|ui| {
                     ui.color_edit_button_srgba_unmultiplied(&mut secondary_color);
+                    ui.add(
+                        egui::TextEdit::singleline(&mut secondary_color_input)
+                            .hint_text("#rrggbbaa")
+                            .desired_width(100.0));
+                    if let Some(color) = hex_to_rgba(&secondary_color_input) {
+                        secondary_color = color;
+                    }
                 });
             });
 
