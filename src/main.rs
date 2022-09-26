@@ -104,7 +104,7 @@ async fn main() {
             }
         }
 
-        // Rendering UI
+        // Process UI
         egui_macroquad::ui(|ctx| {
             let colors = egui::Window::new("Colors").show(ctx, |ui| {
                 use egui::{
@@ -158,8 +158,6 @@ async fn main() {
             });
         });
 
-        egui_macroquad::draw();
-
         // -------------------- [ Inputs ] --------------------
 
         // Check if not interacting with GUI
@@ -203,6 +201,7 @@ async fn main() {
             }
         }
 
+        egui_macroquad::draw();
         next_frame().await
     }
 }
