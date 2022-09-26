@@ -38,7 +38,8 @@ async fn main() {
     let mut grid = Grid::new(16, 16);
     let mut grid_cell_size = 24;
 
-    let mut current_color: [u8; 4] = [255, 255, 255, 255];
+    let mut primary_color: [u8; 4] = [255, 255, 255, 255];
+    let mut secondary_color: [u8; 4] = [255, 255, 255, 255];
 
     // A bool for whether we are interacting with the GUI
     // so the mouse doesn't draw
@@ -56,7 +57,7 @@ async fn main() {
         let x_offset = x_center_offset + x_pan_offset;
         let y_offset = y_center_offset + y_pan_offset;
 
-        // -------------------- [ Rendering ] --------------------
+        // -------------------- [ UI ] --------------------
 
         clear_background(Color::from_rgba(10, 12, 14, 255));
         let grid_color = Color::from_rgba(68, 81, 94, 255);
@@ -106,32 +107,29 @@ async fn main() {
 
         // Process UI
         egui_macroquad::ui(|ctx| {
+            // Styling
+            use egui::{
+                FontFamily::Proportional,
+                FontId
+            };
+            use egui::TextStyle::*;
+
+            let mut style = (*ctx.style()).clone();
+            style.text_styles = [
+                (Heading, FontId::new(24.0, Proportional)),
+                (Body, FontId::new(20.0, Proportional)),
+                (Monospace, FontId::new(20.0, Proportional)),
+                (Button, FontId::new(20.0, Proportional)),
+                (Small, FontId::new(20.0, Proportional)),
+            ].into();
+            ctx.set_style(style);
+
+            // Panels
             let colors = egui::Window::new("Colors").show(ctx, |ui| {
-                use egui::{
-                    FontFamily::Proportional,
-                    FontId
-                };
-                use egui::TextStyle::*;
-
-                let mut style = (*ctx.style()).clone();
-                style.text_styles = [
-                    (Heading, FontId::new(24.0, Proportional)),
-                    (Body, FontId::new(20.0, Proportional)),
-                    (Monospace, FontId::new(20.0, Proportional)),
-                    (Button, FontId::new(20.0, Proportional)),
-                    (Small, FontId::new(20.0, Proportional)),
-                ].into();
-                ctx.set_style(style);
-
                 ui.label("Colors");
                 ui.horizontal(|ui| {
-                    let mut c = egui::Color32::from_rgb_additive(
-                        current_color[0],
-                        current_color[1],
-                        current_color[2],
-                    );
-                    ui.color_edit_button_srgba(&mut c);
-                    current_color = [c.r(), c.g(), c.b(), 255];
+                    ui.color_edit_button_srgba_unmultiplied(&mut primary_color);
+                    ui.color_edit_button_srgba_unmultiplied(&mut secondary_color);
                 });
             });
 
@@ -147,9 +145,9 @@ async fn main() {
             [
                 colors,
                 grid_actions
-            ].iter().for_each(|pane| {
-                if let Some(pane) = pane {
-                    if pane.response.ctx.is_using_pointer() {
+            ].iter().for_each(|panel| {
+                if let Some(panel) = panel {
+                    if panel.response.ctx.is_using_pointer() {
                         on_gui = true;
                     } else {
                         on_gui = false;
@@ -163,7 +161,8 @@ async fn main() {
         // Check if not interacting with GUI
         if !on_gui {
             // Mouse handling
-            if is_mouse_button_down(MouseButton::Left) {
+            if is_mouse_button_down(MouseButton::Left)
+            || is_mouse_button_down(MouseButton::Right) {
                 let (x, y) = mouse_position();
 
                 // Bail out if mouse is outside of grid
@@ -177,7 +176,11 @@ async fn main() {
                     let x = ((x - x_offset) / grid_cell_size as f32) as usize;
                     let y = ((y - y_offset) / grid_cell_size as f32) as usize;
 
-                    grid.set(x, y, current_color);
+                    if is_mouse_button_down(MouseButton::Left) {
+                        grid.set(x, y, primary_color);
+                    } else if is_mouse_button_down(MouseButton::Right) {
+                        grid.set(x, y, secondary_color);
+                    }
                 }
             }
 
