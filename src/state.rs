@@ -37,7 +37,7 @@ pub struct State {
 
     // ---------- [ UI ] ----------
     /// Zoom level
-    #[derivative(Default(value = "24"))]
+    #[derivative(Default(value = "32"))]
     zoom: i32,
     /// Is the mouse is hovering over the grid
     is_on_gui: bool,
@@ -143,7 +143,7 @@ impl State {
             ].into();
 
             let widget_style = egui::style::WidgetVisuals {
-                bg_fill: egui::Color32::from_rgba_premultiplied(10, 12, 14, 192),
+                bg_fill: egui::Color32::from_rgb(10, 12, 14),
                 bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_rgb(34, 36, 38)),
                 rounding: Default::default(),
                 fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_rgb(236, 237, 238)),
@@ -203,7 +203,19 @@ impl State {
                 });
             });
 
-            let info = egui::TopBottomPanel::bottom("info").show(ctx, |ui| {
+            let top = egui::TopBottomPanel::top("menu").show(ctx, |ui| {
+                egui::menu::bar(ui, |ui| {
+                    ui.menu_button("File", |ui| {
+                        if ui.button("New").on_hover_text("Create a new grid").clicked() {
+                            self.grid.clear();
+                            self.undo.clear();
+                            self.undo.push(Action::Clear, &self.grid);
+                        }
+                    });
+                });
+            });
+
+            let bottom = egui::TopBottomPanel::bottom("info").show(ctx, |ui| {
                 ui.label(format!("FPS: {}", get_fps()));
             });
 
@@ -223,7 +235,8 @@ impl State {
             });
             // For component that isn't wrapped in Option
             [
-                info
+                top,
+                bottom,
             ].iter().for_each(|panel| {
                 if panel.response.ctx.is_using_pointer() {
                     self.is_on_gui = true;

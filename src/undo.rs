@@ -57,6 +57,7 @@ impl Undo {
                 }
             }
             (_, Action::Clear) => {
+                if self.pointer == 0 { return; }
                 // If the action is clear, then just copy the previous grid
                 *grid = self.stack[self.pointer - 1].0.clone();
             }
@@ -81,4 +82,6 @@ impl Undo {
             }
         }
     }
+
+    pub fn clear(&mut self) { *self = Self::default(); }
 }
