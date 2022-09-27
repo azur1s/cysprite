@@ -20,10 +20,30 @@ impl Grid {
     }
 
     fn set(&mut self, x: usize, y: usize, color: [u8; 4]) {
-        if x >= self.width || y >= self.height {
+        // If the coordinates is out of bounds or the color is transparent, do nothing
+        if x >= self.width || y >= self.height || color[3] == 0 {
             return;
         }
-        self.cells[y * self.width + x] = color;
+        // If the color is full solid, then just simply set the color
+        if color[3] == 255 {
+            self.cells[y * self.width + x] = color;
+            return;
+        } else {
+            let old_color = self.get(x, y);
+            let new_color = [
+                (old_color[0] as u16 * (255 - color[3]) as u16
+                    + color[0] as u16 * color[3] as u16)
+                    / 255,
+                (old_color[1] as u16 * (255 - color[3]) as u16
+                    + color[1] as u16 * color[3] as u16)
+                    / 255,
+                (old_color[2] as u16 * (255 - color[3]) as u16
+                    + color[2] as u16 * color[3] as u16)
+                    / 255,
+                255,
+            ].map(|x| x as u8);
+            self.cells[y * self.width + x] = new_color;
+        }
     }
 
     fn clear(&mut self) {
@@ -57,6 +77,10 @@ fn hex_to_rgba(s: &String) -> Option<[u8; 4]> {
 #[macroquad::main("harcana - pixel art tool")]
 async fn main() {
     let mut grid = Grid::new(16, 16);
+
+    // A vector containing the coordinates of the pixels that have been modified at this frame
+    // So you can't apply transparent color to a pixel over and over again
+    let mut painted_this_frame: Vec<(usize, usize)> = vec![];
 
     // How many pixel per cell (could be interpreted as zoom level)
     let mut grid_cell_size = 24;
@@ -214,22 +238,28 @@ async fn main() {
                 let (x, y) = mouse_position();
 
                 // Bail out if mouse is outside of grid
-                if x > x_offset + grid.width as f32 * grid_cell_size as f32
+                if !(x > x_offset + grid.width as f32 * grid_cell_size as f32
                     || x < x_offset
                     || y > y_offset + grid.height as f32 * grid_cell_size as f32
-                    || y < y_offset {
-                    // Do nothing
-                } else {
+                    || y < y_offset) {
                     // Align center and convert to grid coordinates
                     let x = ((x - x_offset) / grid_cell_size as f32) as usize;
                     let y = ((y - y_offset) / grid_cell_size as f32) as usize;
 
-                    if is_mouse_button_down(MouseButton::Left) {
-                        grid.set(x, y, primary_color);
-                    } else if is_mouse_button_down(MouseButton::Right) {
-                        grid.set(x, y, secondary_color);
+                    // Don't draw if the cell have already been painted since mouse down
+                    if !painted_this_frame.contains(&(x, y)) {
+                        if is_mouse_button_down(MouseButton::Left) {
+                            grid.set(x, y, primary_color);
+                        } else if is_mouse_button_down(MouseButton::Right) {
+                            grid.set(x, y, secondary_color);
+                        }
+                        painted_this_frame.push((x, y));
+                        painted_this_frame.sort_unstable();
+                        painted_this_frame.dedup();
                     }
                 }
+            } else if is_mouse_button_released(MouseButton::Left) {
+                painted_this_frame.clear();
             }
 
             // Scroll handling
