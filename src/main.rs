@@ -1,7 +1,8 @@
 use macroquad::prelude::*;
 
-mod grid;
 mod util;
+mod grid;
+mod undo;
 mod state;
 
 use state::State;
@@ -10,6 +11,7 @@ use state::State;
 async fn main() {
 
     let mut state = State::new();
+    state.init();
 
     loop {
         state.update();

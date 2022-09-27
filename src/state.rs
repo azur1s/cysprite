@@ -3,6 +3,7 @@ use macroquad::prelude::*;
 
 use crate::compact;
 use crate::grid::Grid;
+use crate::undo::{ Undo, Action };
 use crate::util::{ rgba_to_hex, hex_to_rgba };
 
 #[derive(Derivative)]
@@ -28,6 +29,12 @@ pub struct State {
     /// Secondary color's text input string
     secondary_color_input: String,
 
+    // ---------- [ Undo ] ----------
+    /// The undo stack.
+    #[derivative(Debug = "ignore")]
+    #[derivative(Default(value = "Undo::new()"))]
+    undo: Undo,
+
     // ---------- [ UI ] ----------
     /// Zoom level
     #[derivative(Default(value = "24"))]
@@ -44,6 +51,10 @@ pub struct State {
 
 impl State {
     pub fn new() -> Self { Self::default() }
+
+    pub fn init(&mut self) {
+        self.undo.push(Action::Clear, &self.grid);
+    }
 
     /// Calculate grid boundaries.
     /// Return a tuple with minimum and maximum coordinates of X and Y.
@@ -138,6 +149,7 @@ impl State {
 
                 ui.label("Clear grid");
                 if ui.button("Clear").clicked() {
+                    self.undo.push(Action::Clear, &self.grid);
                     self.grid.clear();
                 }
             });
@@ -177,11 +189,15 @@ impl State {
                 });
             });
 
+            let info = egui::TopBottomPanel::bottom("info").show(ctx, |ui| {
+                ui.label(format!("FPS: {}", get_fps()));
+            });
+
             // Check if the GUI is using pointer
             // so that it blocks the mouse from drawing
             [
                 colors,
-                grid_actions
+                grid_actions,
             ].iter().for_each(|panel| {
                 if let Some(panel) = panel {
                     if panel.response.ctx.is_using_pointer() {
@@ -191,13 +207,23 @@ impl State {
                     }
                 }
             });
+            // For component that isn't wrapped in Option
+            [
+                info
+            ].iter().for_each(|panel| {
+                if panel.response.ctx.is_using_pointer() {
+                    self.is_on_gui = true;
+                } else {
+                    self.is_on_gui = false;
+                }
+            });
         });
     }
 
     /// Process user inputs
     fn input(&mut self) {
         if !self.is_on_gui {
-            // Mouse handling
+            // On mouse down
             if is_mouse_button_down(MouseButton::Left)
             || is_mouse_button_down(MouseButton::Right) {
                 let (x, y) = mouse_position();
@@ -222,8 +248,20 @@ impl State {
                     }
                 }
             }
+            // On mouse up
             if is_mouse_button_released(MouseButton::Left)
             || is_mouse_button_released(MouseButton::Right) {
+                // Push undo action
+                self.undo.push(
+                    Action::Paint(
+                        self.painted_cells.clone(),
+                        if is_mouse_button_released(MouseButton::Left) {
+                            self.primary_color
+                        } else {
+                            self.secondary_color
+                        }),
+                    &self.grid);
+                // Clear the painted cells list
                 self.painted_cells.clear();
             }
 
@@ -244,6 +282,16 @@ impl State {
                 self.pan_offset.1 += (y - self.pan_pos.1) * 0.5;
 
                 self.pan_pos = (x, y);
+            }
+
+            // Undo and redo
+            if is_key_pressed(KeyCode::Z)
+            && is_key_down(KeyCode::LeftControl) {
+                if is_key_down(KeyCode::LeftShift) {
+                    self.undo.redo(&mut self.grid);
+                } else {
+                    self.undo.undo(&mut self.grid);
+                }
             }
         }
     }

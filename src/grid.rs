@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct Grid {
     pub width: usize,
     pub height: usize,
@@ -52,10 +53,20 @@ impl Grid {
         }
     }
 
+    /// Erase the cell at the given coordinates.
+    pub fn erase(&mut self, x: usize, y: usize) {
+        self.cells[y * self.width + x] = [0, 0, 0, 0];
+    }
+
     /// Clear all cells (set all cells to transparent)
     pub fn clear(&mut self) {
         for cell in self.cells.iter_mut() {
             *cell = [0, 0, 0, 0];
         }
+    }
+
+    /// Get cells count
+    pub fn cells_count(&self) -> usize {
+        self.cells.iter().filter(|c| c[3] != 0).count()
     }
 }
