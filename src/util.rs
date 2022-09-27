@@ -1,4 +1,3 @@
-
 pub fn hex_to_rgba(s: &str) -> Option<[u8; 4]> {
     let s = s.trim_start_matches('#');
 

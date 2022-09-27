@@ -21,9 +21,9 @@ pub struct State {
     secondary_color_input: String,
 
     // ---------- [ UI ] ----------
-    /// Current zoom level
+    /// Zoom level
     zoom: i32,
-    /// Bool to indicate if the mouse is hovering over the grid
+    /// Is the mouse is hovering over the grid
     is_on_gui: bool,
     /// Grid offset (pan offset + middle offset + zoom level offset)
     grid_offset: (f32, f32),
@@ -81,50 +81,28 @@ impl State {
     /// Render the grid and the UI
     fn render(&mut self) {
         clear_background(Color::from_rgba(10, 12, 14, 255));
-        let grid_color = Color::from_rgba(68, 81, 94, 255);
+        let border_color = Color::from_rgba(68, 81, 94, 255);
 
-        // Drawing grid lines
-        for x in 0..=self.grid.width {
-            draw_line(
-                // from
-                self.grid_offset.0 + x as f32 * self.zoom as f32,
-                self.grid_offset.1,
-                // to
-                self.grid_offset.0 + x as f32 * self.zoom as f32,
-                self.grid_offset.1 + self.grid.height as f32 * self.zoom as f32,
-                1.0, // width
-                grid_color
-            ); 
-        }
-
-        for y in 0..=self.grid.height {
-            draw_line(
-                // from
-                self.grid_offset.0,
-                self.grid_offset.1 + y as f32 * self.zoom as f32,
-                // to
-                self.grid_offset.0 + self.grid.width as f32 * self.zoom as f32,
-                self.grid_offset.1 + y as f32 * self.zoom as f32,
-                1.0, // width
-                grid_color
-            ); 
-        }
-
-        // Rendering grid cells
-        for x in 0..self.grid.width {
-            for y in 0..self.grid.height {
+        // Grid cells
+        (0..self.grid.width).for_each(|x| {
+            (0..self.grid.height).for_each(|y| {
                 let cell_color = self.grid.get(x, y);
-                if cell_color[3] != 0 {
-                    draw_rectangle(
-                        self.grid_offset.0 + x as f32 * self.zoom as f32,
-                        self.grid_offset.1 + y as f32 * self.zoom as f32,
-                        self.zoom as f32,
-                        self.zoom as f32,
-                        Color::from_rgba(cell_color[0], cell_color[1], cell_color[2], cell_color[3]),
-                    );
-                }
-            }
-        }
+                if cell_color[3] == 0 { return; }
+                draw_rectangle(
+                    self.grid_offset.0 + x as f32 * self.zoom as f32, self.grid_offset.1 + y as f32 * self.zoom as f32,
+                    self.zoom as f32, self.zoom as f32,
+                    Color::from_rgba(cell_color[0], cell_color[1], cell_color[2], cell_color[3]),
+                );
+            });
+        });
+
+        // Grid border lines
+        draw_rectangle_lines(
+            self.grid_offset.0, self.grid_offset.1,
+            self.grid.width as f32 * self.zoom as f32, self.grid.height as f32 * self.zoom as f32,
+            1.0,
+            border_color,
+        );
 
         // Process UI
         egui_macroquad::ui(|ctx| {
@@ -147,13 +125,12 @@ impl State {
 
             // Panels
             let grid_actions = egui::Window::new("Grid Actions").show(ctx, |ui| {
+                ui.add(egui::Slider::new(&mut self.zoom, 4..=64).text("Zoom"));
+
                 ui.label("Clear grid");
                 if ui.button("Clear").clicked() {
                     self.grid.clear();
                 }
-
-                ui.label("Zoom");
-                ui.add(egui::Slider::new(&mut self.zoom, 4..=64).text("Zoom"));
             });
 
             let colors = egui::Window::new("Colors").show(ctx, |ui| {
