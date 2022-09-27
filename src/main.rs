@@ -74,6 +74,10 @@ fn hex_to_rgba(s: &String) -> Option<[u8; 4]> {
     }
 }
 
+fn rgba_to_hex(color: [u8; 4]) -> String {
+    format!("#{:02x}{:02x}{:02x}{:02x}", color[0], color[1], color[2], color[3])
+}
+
 #[macroquad::main("harcana - pixel art tool")]
 async fn main() {
     let mut grid = Grid::new(16, 16);
@@ -186,29 +190,36 @@ async fn main() {
 
             let colors = egui::Window::new("Colors").show(ctx, |ui| {
                 ui.label("Colors");
-                ui.horizontal(|ui| {
-                    // Color wheel
-                    ui.color_edit_button_srgba_unmultiplied(&mut primary_color);
-                    // Hex input
-                    ui.add(
-                        egui::TextEdit::singleline(&mut primary_color_input)
-                            .hint_text("#rrggbbaa")
-                            .desired_width(100.0));
 
-                    // If the hex is valid then set the color
-                    if let Some(color) = hex_to_rgba(&primary_color_input) {
-                        primary_color = color;
+                // Macros for adding color inputs
+                macro_rules! color_input {
+                    ($ui: ident, $color: ident, $color_input: ident) => {
+                        let mut picked_color = $color.clone();
+                        // Color wheel
+                        $ui.color_edit_button_srgba_unmultiplied(&mut picked_color);
+                        // Hex input
+                        $ui.add(egui::TextEdit::singleline(&mut $color_input)
+                                .hint_text("#rrggbbaa")
+                                .desired_width(100.0));
+
+                        // If the color has changed by the color picker
+                        if picked_color != $color {
+                            $color = picked_color;
+                            // Replace the hex input with the new color
+                            $color_input = rgba_to_hex($color);
+                        } else {
+                            if let Some(color) = hex_to_rgba(&$color_input) {
+                                $color = color;
+                            }
+                        }
                     }
+                }
+
+                ui.horizontal(|ui| {
+                    color_input!(ui, primary_color, primary_color_input);
                 });
                 ui.horizontal(|ui| {
-                    ui.color_edit_button_srgba_unmultiplied(&mut secondary_color);
-                    ui.add(
-                        egui::TextEdit::singleline(&mut secondary_color_input)
-                            .hint_text("#rrggbbaa")
-                            .desired_width(100.0));
-                    if let Some(color) = hex_to_rgba(&secondary_color_input) {
-                        secondary_color = color;
-                    }
+                    color_input!(ui, secondary_color, secondary_color_input);
                 });
             });
 
@@ -258,7 +269,9 @@ async fn main() {
                         painted_this_frame.dedup();
                     }
                 }
-            } else if is_mouse_button_released(MouseButton::Left) {
+            }
+            if is_mouse_button_released(MouseButton::Left)
+            || is_mouse_button_released(MouseButton::Right) {
                 painted_this_frame.clear();
             }
 
