@@ -142,19 +142,6 @@ impl State {
                 (Small, FontId::new(20.0, Proportional)),
             ].into();
 
-            let widget_style = egui::style::WidgetVisuals {
-                bg_fill: egui::Color32::from_rgb(10, 12, 14),
-                bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_rgb(34, 36, 38)),
-                rounding: Default::default(),
-                fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_rgb(236, 237, 238)),
-                expansion: Default::default(),
-            };
-
-            style.visuals.widgets.noninteractive = widget_style.clone();
-            style.visuals.widgets.inactive = widget_style.clone();
-            style.visuals.widgets.hovered = widget_style.clone();
-            style.visuals.widgets.active = widget_style.clone();
-
             ctx.set_style(style);
 
             // Panels
