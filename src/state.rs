@@ -1,20 +1,27 @@
+use derivative::Derivative;
 use macroquad::prelude::*;
 
 use crate::compact;
 use crate::grid::Grid;
 use crate::util::{ rgba_to_hex, hex_to_rgba };
 
+#[derive(Derivative)]
+#[derivative(Default)]
 pub struct State {
     // ---------- [ Grid ] ----------
     /// Internal grid
+    #[derivative(Debug = "ignore")]
+    #[derivative(Default(value = "Grid::new(16, 16)"))]
     grid: Grid,
     /// A vector containing all cell's coordinates that have
     /// been modified at this frame.
     painted_cells: Vec<(usize, usize)>,
 
     /// The current primary color (left mouse)
+    #[derivative(Default(value = "[255, 255, 255, 255]"))]
     primary_color: [u8; 4],
     /// The current secondary color (right mouse)
+    #[derivative(Default(value = "[0, 0, 0, 255]"))]
     secondary_color: [u8; 4],
     /// Primary color's text input string
     primary_color_input: String,
@@ -23,6 +30,7 @@ pub struct State {
 
     // ---------- [ UI ] ----------
     /// Zoom level
+    #[derivative(Default(value = "24"))]
     zoom: i32,
     /// Is the mouse is hovering over the grid
     is_on_gui: bool,
@@ -35,23 +43,7 @@ pub struct State {
 }
 
 impl State {
-    pub fn new() -> Self {
-        Self {
-            grid: Grid::new(16, 16),
-            painted_cells: vec![],
-
-            primary_color: [255, 255, 255, 255],
-            secondary_color: [0, 0, 0, 255],
-            primary_color_input: String::new(),
-            secondary_color_input: String::new(),
-
-            zoom: 24,
-            is_on_gui: false,
-            grid_offset: (0.0, 0.0),
-            pan_offset: (0.0, 0.0),
-            pan_pos: (0.0, 0.0),
-        }
-    }
+    pub fn new() -> Self { Self::default() }
 
     /// Calculate grid boundaries.
     /// Return a tuple with minimum and maximum coordinates of X and Y.
