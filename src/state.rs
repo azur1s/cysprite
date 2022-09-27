@@ -4,20 +4,32 @@ use crate::grid::Grid;
 use crate::util::{ rgba_to_hex, hex_to_rgba };
 
 pub struct State {
-    // Grid
+    // ---------- [ Grid ] ----------
+    /// Internal grid
     grid: Grid,
+    /// A vector containing all cell's coordinates that have
+    /// been modified at this frame.
     painted_cells: Vec<(usize, usize)>,
 
+    /// The current primary color (left mouse)
     primary_color: [u8; 4],
+    /// The current secondary color (right mouse)
     secondary_color: [u8; 4],
+    /// Primary color's text input string
     primary_color_input: String,
+    /// Secondary color's text input string
     secondary_color_input: String,
 
-    // UI
+    // ---------- [ UI ] ----------
+    /// Current zoom level
     zoom: i32,
+    /// Bool to indicate if the mouse is hovering over the grid
     is_on_gui: bool,
+    /// Grid offset (pan offset + middle offset + zoom level offset)
     grid_offset: (f32, f32),
+    /// Grid pan offset relative to the center of the screen
     pan_offset: (f32, f32),
+    /// Grid pan offset relative to the mouse position this frame
     pan_pos: (f32, f32),
 }
 
@@ -55,7 +67,7 @@ impl State {
         )
     }
 
-    /// Update the state one time step
+    /// Update the state one frame
     pub fn update(&mut self) {
         let middle_offset = (
             (screen_width() - self.grid.width as f32 * self.zoom as f32) / 2.0,
