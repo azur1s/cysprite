@@ -4,6 +4,11 @@ pub struct Grid {
     pub cells: Vec<[u8; 4]>,
 }
 
+#[macro_export]
+macro_rules! compact {
+    ($c: expr) => { Color::from_rgba($c[0], $c[1], $c[2], $c[3]) };
+}
+
 impl Grid {
     pub fn new(width: usize, height: usize) -> Self {
         Self {
@@ -39,7 +44,9 @@ impl Grid {
                 (old_color[2] as u16 * (255 - color[3]) as u16
                     + color[2] as u16 * color[3] as u16)
                     / 255,
-                255,
+                (old_color[3] as u16 * (255 - color[3]) as u16
+                    + color[3] as u16 * color[3] as u16)
+                    / 255,
             ].map(|x| x as u8);
             self.cells[y * self.width + x] = new_color;
         }

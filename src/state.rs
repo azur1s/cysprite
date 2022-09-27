@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 
+use crate::compact;
 use crate::grid::Grid;
 use crate::util::{ rgba_to_hex, hex_to_rgba };
 
@@ -87,12 +88,28 @@ impl State {
         (0..self.grid.width).for_each(|x| {
             (0..self.grid.height).for_each(|y| {
                 let cell_color = self.grid.get(x, y);
-                if cell_color[3] == 0 { return; }
-                draw_rectangle(
+                let (x, y, w, h) = (
                     self.grid_offset.0 + x as f32 * self.zoom as f32, self.grid_offset.1 + y as f32 * self.zoom as f32,
                     self.zoom as f32, self.zoom as f32,
-                    Color::from_rgba(cell_color[0], cell_color[1], cell_color[2], cell_color[3]),
                 );
+                let (w_half, h_half) = (w / 2.0, h / 2.0);
+
+                match cell_color[3] {
+                    0..=254 => {
+                        let light = Color::from_rgba(198, 202, 206, 255);
+                        let dim = Color::from_rgba(161, 168, 174, 255);
+
+                        // Draw transparent checkerboard pattern
+                        draw_rectangle(x, y, w_half, h_half, light);
+                        draw_rectangle(x, y + h_half, w_half, h_half, dim);
+                        draw_rectangle(x + w_half, y, w_half, h_half, dim);
+                        draw_rectangle(x + w_half, y + h_half, w_half, h_half, light);
+                        draw_rectangle(x, y, w, h, compact!(cell_color));
+                    }
+                    255 => {
+                        draw_rectangle(x, y, w, h, compact!(cell_color));
+                    }
+                }
             });
         });
 
