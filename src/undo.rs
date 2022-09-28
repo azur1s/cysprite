@@ -27,7 +27,8 @@ impl Undo {
     pub fn new() -> Self { Self::default() }
 
     pub fn push(&mut self, act: Action, grid: &Grid) {
-        // If the pointer is not at the end of the stack, remove all the elements after the pointer
+        // If the pointer is not at the end of the stack, remove all
+        // the elements after the pointer
         if self.pointer != self.stack.len() {
             self.stack.truncate(self.pointer);
         }
