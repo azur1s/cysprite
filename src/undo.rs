@@ -53,14 +53,7 @@ impl Undo {
                 // Get the previous grid state
                 if self.pointer > 0 {
                     let prev_grid = &self.stack[self.pointer - 1].0;
-                    for (x, y) in coords {
-                        // If the previous color is transparent, then erase the cell
-                        if prev_grid.get(*x, *y)[3] == 0 {
-                            grid.erase(*x, *y);
-                        } else {
-                            grid.set(*x, *y, prev_grid.get(*x, *y));
-                        }
-                    }
+                    grid.replace(prev_grid);
                 } else {
                     // If there is no previous color, then just erase the cell
                     for (x, y) in coords {

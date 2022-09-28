@@ -62,4 +62,11 @@ impl Grid {
             *cell = [0, 0, 0, 0];
         }
     }
+
+    /// Replace with another grid
+    pub fn replace(&mut self, grid: &Grid) {
+        self.width = grid.width;
+        self.height = grid.height;
+        self.cells = grid.cells.clone();
+    }
 }
