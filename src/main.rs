@@ -10,7 +10,7 @@ mod state;
 
 use state::State;
 
-#[macroquad::main("harcana - pixel art tool")]
+#[macroquad::main("harcana")]
 async fn main() {
 
     let mut state = State::new();
