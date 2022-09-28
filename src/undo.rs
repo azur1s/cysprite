@@ -7,6 +7,15 @@ pub enum Action {
     Clear,
 }
 
+impl std::fmt::Display for Action {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Action::Paint(g, _) => write!(f, "paint {} cells", g.len()),
+            Action::Clear => write!(f, "clear"),
+        }
+    }
+}
+
 #[derive(Derivative)]
 #[derivative(Default)]
 pub struct Undo {
@@ -30,17 +39,19 @@ impl Undo {
         self.pointer += 1;
     }
 
-    pub fn undo(&mut self, grid: &mut Grid) {
+    pub fn undo(&mut self, grid: &mut Grid) -> Option<&Action> {
         // If there is no more undo, do nothing
-        if self.pointer == 0 { return; }
+        if self.pointer == 0 { return None; }
 
         self.pointer -= 1;
 
         // Perform the action
-        match &self.stack[self.pointer] {
+        let act = &self.stack[self.pointer];
+        match act {
             (_, Action::Paint(coords, _)) => {
-                // Try to get previous color from the grid
-                if let Some((prev_grid, _)) = self.stack.get(self.pointer - 1) {
+                // Get the previous grid state
+                if self.pointer > 0 {
+                    let prev_grid = &self.stack[self.pointer - 1].0;
                     for (x, y) in coords {
                         // If the previous color is transparent, then erase the cell
                         if prev_grid.get(*x, *y)[3] == 0 {
@@ -57,21 +68,24 @@ impl Undo {
                 }
             }
             (_, Action::Clear) => {
-                if self.pointer == 0 { return; }
+                if self.pointer == 0 { return None; }
                 // If the action is clear, then just copy the previous grid
                 *grid = self.stack[self.pointer - 1].0.clone();
             }
         }
+
+        return Some(&act.1);
     }
 
-    pub fn redo(&mut self, grid: &mut Grid) {
+    pub fn redo(&mut self, grid: &mut Grid) -> Option<&Action> {
         // If there is no more redo, do nothing
-        if self.pointer == self.stack.len() { return; }
+        if self.pointer == self.stack.len() { return None; }
 
         self.pointer += 1;
 
         // Perform the action
-        match &self.stack[self.pointer - 1] {
+        let act = &self.stack[self.pointer - 1];
+        match act {
             (_, Action::Paint(coords, color)) => {
                 for (x, y) in coords {
                     grid.set(*x, *y, *color);
@@ -81,6 +95,8 @@ impl Undo {
                 grid.clear();
             }
         }
+
+        return Some(&act.1);
     }
 
     pub fn clear(&mut self) { *self = Self::default(); }

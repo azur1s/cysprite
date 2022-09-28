@@ -1,8 +1,11 @@
 use macroquad::prelude::*;
 
 mod util;
+
 mod grid;
 mod undo;
+mod status_message;
+
 mod state;
 
 use state::State;

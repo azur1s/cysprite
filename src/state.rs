@@ -2,9 +2,11 @@ use derivative::Derivative;
 use macroquad::prelude::*;
 
 use crate::compact;
+use crate::util::{ rgba_to_hex, hex_to_rgba };
+
 use crate::grid::Grid;
 use crate::undo::{ Undo, Action };
-use crate::util::{ rgba_to_hex, hex_to_rgba };
+use crate::status_message::StatusMessage;
 
 #[derive(Derivative)]
 #[derivative(Default)]
@@ -47,6 +49,9 @@ pub struct State {
     pan_offset: (f32, f32),
     /// Grid pan offset relative to the mouse position this frame
     pan_pos: (f32, f32),
+    /// Status message
+    #[derivative(Default(value = "StatusMessage::new()"))]
+    status: StatusMessage,
 }
 
 impl State {
@@ -54,6 +59,7 @@ impl State {
 
     pub fn init(&mut self) {
         self.undo.push(Action::Clear, &self.grid);
+        self.status.set("Welcome to Harcana!", 5.0);
     }
 
     /// Calculate grid boundaries.
@@ -78,6 +84,9 @@ impl State {
             (screen_height() - self.grid.height as f32 * self.zoom as f32) / 2.0,
         );
         self.grid_offset = (middle_offset.0 + self.pan_offset.0, middle_offset.1 + self.pan_offset.1);
+
+        self.status.update(get_frame_time());
+
         self.render();
         self.input();
     }
@@ -190,20 +199,8 @@ impl State {
                 });
             });
 
-            let top = egui::TopBottomPanel::top("menu").show(ctx, |ui| {
-                egui::menu::bar(ui, |ui| {
-                    ui.menu_button("File", |ui| {
-                        if ui.button("New").on_hover_text("Create a new grid").clicked() {
-                            self.grid.clear();
-                            self.undo.clear();
-                            self.undo.push(Action::Clear, &self.grid);
-                        }
-                    });
-                });
-            });
-
-            let bottom = egui::TopBottomPanel::bottom("info").show(ctx, |ui| {
-                ui.label(format!("FPS: {}", get_fps()));
+            let status = egui::TopBottomPanel::bottom("info").show(ctx, |ui| {
+                ui.label(format!("{}", self.status.get()));
             });
 
             // Check if the GUI is using pointer
@@ -222,8 +219,7 @@ impl State {
             });
             // For component that isn't wrapped in Option
             [
-                top,
-                bottom,
+                status,
             ].iter().for_each(|panel| {
                 if panel.response.ctx.is_using_pointer() {
                     self.is_on_gui = true;
@@ -302,9 +298,21 @@ impl State {
             if is_key_pressed(KeyCode::Z)
             && is_key_down(KeyCode::LeftControl) {
                 if is_key_down(KeyCode::LeftShift) {
-                    self.undo.redo(&mut self.grid);
+                    self.status.set(
+                        if let Some(act) = self.undo.redo(&mut self.grid) {
+                            format!("Redo {}", act)
+                        } else {
+                            "".to_string()
+                        }.as_str(),
+                        3.0);
                 } else {
-                    self.undo.undo(&mut self.grid);
+                    self.status.set(
+                        if let Some(act) = self.undo.undo(&mut self.grid) {
+                            format!("Undo {}", act)
+                        } else {
+                            "".to_string()
+                        }.as_str(),
+                        3.0);
                 }
             }
         }
