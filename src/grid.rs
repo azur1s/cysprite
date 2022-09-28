@@ -45,9 +45,7 @@ impl Grid {
                 (old_color[2] as u16 * (255 - color[3]) as u16
                     + color[2] as u16 * color[3] as u16)
                     / 255,
-                (old_color[3] as u16 * (255 - color[3]) as u16
-                    + color[3] as u16 * color[3] as u16)
-                    / 255,
+                (old_color[3].saturating_add(color[3])) as u16,
             ].map(|x| x as u8);
             self.cells[y * self.width + x] = new_color;
         }
@@ -63,10 +61,5 @@ impl Grid {
         for cell in self.cells.iter_mut() {
             *cell = [0, 0, 0, 0];
         }
-    }
-
-    /// Get cells count
-    pub fn cells_count(&self) -> usize {
-        self.cells.iter().filter(|c| c[3] != 0).count()
     }
 }
