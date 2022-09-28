@@ -63,18 +63,16 @@ impl State {
 
     /// Calculate grid boundaries.
     /// Return a tuple with minimum and maximum coordinates of X and Y.
-    fn grid_bounds(&self) -> (f32, f32, f32, f32) {
-        (
-            // X min
-            self.grid_offset.0,
-            // X max
-            self.grid_offset.0 + self.grid.width as f32 * self.zoom as f32,
-            // Y min
-            self.grid_offset.1,
-            // Y max
-            self.grid_offset.1 + self.grid.height as f32 * self.zoom as f32,
-        )
-    }
+    fn grid_bounds(&self) -> (f32, f32, f32, f32) {(
+        // X min
+        self.grid_offset.0,
+        // X max
+        self.grid_offset.0 + self.grid.width as f32 * self.zoom as f32,
+        // Y min
+        self.grid_offset.1,
+        // Y max
+        self.grid_offset.1 + self.grid.height as f32 * self.zoom as f32,
+    )}
 
     /// Update the state one frame
     pub fn update(&mut self) {
@@ -106,11 +104,11 @@ impl State {
                 let (w_half, h_half) = (w / 2.0, h / 2.0);
 
                 match cell_color[3] {
+                    // Draw checkerboard pattern for translucent cells
                     0..=254 => {
                         let light = Color::from_rgba(198, 202, 206, 255);
                         let dim = Color::from_rgba(161, 168, 174, 255);
 
-                        // Draw transparent checkerboard pattern
                         draw_rectangle(x, y, w_half, h_half, light);
                         draw_rectangle(x, y + h_half, w_half, h_half, dim);
                         draw_rectangle(x + w_half, y, w_half, h_half, dim);
@@ -150,14 +148,21 @@ impl State {
                 (Small, FontId::new(20.0, Proportional)),
             ].into();
 
+            style.spacing.item_spacing = [8.0, 8.0].into();
+            style.spacing.window_margin = egui::style::Margin::same(8.0);
+
             ctx.set_style(style);
 
             // Panels
             let grid_actions = egui::Window::new("Grid Actions").show(ctx, |ui| {
-                ui.add(egui::Slider::new(&mut self.zoom, 4..=64).text("Zoom"));
+                ui.horizontal(|ui| {
+                    ui.label("Zoom");
+                    ui.add(egui::DragValue::new(&mut self.zoom)
+                        .speed(1.0)
+                        .clamp_range(4..=64));
+                });
 
-                ui.label("Clear grid");
-                if ui.button("Clear").clicked() {
+                if ui.button("Clear Grid").clicked() {
                     self.undo.push(Action::Clear, &self.grid);
                     self.grid.clear();
                 }
@@ -279,11 +284,12 @@ impl State {
             self.zoom = self.zoom.clamp(4, 64);
 
             // Keyboard handling
+
+            // Panning (Space)
             if is_key_pressed(KeyCode::Space) {
                 self.pan_pos = mouse_position();
             }
 
-            // Panning
             if is_key_down(KeyCode::Space) {
                 let (x, y) = mouse_position();
 
@@ -293,7 +299,7 @@ impl State {
                 self.pan_pos = (x, y);
             }
 
-            // Undo and redo
+            // Undo and redo (Ctrl + Z and Ctrl + Shift + Z)
             if is_key_pressed(KeyCode::Z)
             && is_key_down(KeyCode::LeftControl) {
                 if is_key_down(KeyCode::LeftShift) {
@@ -313,6 +319,14 @@ impl State {
                         }.as_str(),
                         3.0);
                 }
+            }
+
+            // Zoom (Equal and Minus)
+            if is_key_pressed(KeyCode::Equal) {
+                self.zoom += 4;
+            }
+            if is_key_pressed(KeyCode::Minus) {
+                self.zoom -= 4;
             }
         }
     }
