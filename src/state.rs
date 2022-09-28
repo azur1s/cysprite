@@ -58,7 +58,6 @@ impl State {
     pub fn new() -> Self { Self::default() }
 
     pub fn init(&mut self) {
-        self.undo.push(Action::Clear, &self.grid);
         self.status.set("Welcome to Harcana!", 5.0);
     }
 
@@ -302,7 +301,7 @@ impl State {
                         if let Some(act) = self.undo.redo(&mut self.grid) {
                             format!("Redo {}", act)
                         } else {
-                            "".to_string()
+                            "Nothing more to redo".to_string()
                         }.as_str(),
                         3.0);
                 } else {
@@ -310,7 +309,7 @@ impl State {
                         if let Some(act) = self.undo.undo(&mut self.grid) {
                             format!("Undo {}", act)
                         } else {
-                            "".to_string()
+                            "Nothing more to undo".to_string()
                         }.as_str(),
                         3.0);
                 }
