@@ -10,7 +10,7 @@ mod state;
 
 use state::State;
 
-#[macroquad::main("harcana")]
+#[macroquad::main("cysprite")]
 async fn main() {
 
     let mut state = State::new();
@@ -19,6 +19,10 @@ async fn main() {
     loop {
         state.update();
         egui_macroquad::draw();
+
+        std::thread::sleep(std::time::Duration::from_millis(
+            if state.is_idle { 60 } else { 15 },
+        ));
         next_frame().await
     }
 }

@@ -52,6 +52,9 @@ pub struct State {
     /// Status message
     #[derivative(Default(value = "StatusMessage::new()"))]
     status: StatusMessage,
+
+    // ---------- [ Misc ] ----------
+    pub is_idle: bool,
 }
 
 impl State {
@@ -204,7 +207,27 @@ impl State {
             });
 
             let status = egui::TopBottomPanel::bottom("info").show(ctx, |ui| {
-                ui.label(format!("{}", self.status.get()));
+                ui.horizontal(|ui| {
+                    let msg = self.status.get();
+                    ui.label(format!(
+                        "{}",
+                        if msg.is_empty() {
+                            if self.is_idle {
+                                "Idle"
+                            } else {
+                                ""
+                            }
+                        } else {
+                            msg
+                        }
+                    ));
+                    ui.with_layout(egui::Layout::right_to_left(), |ui| {
+                        ui.label(format!(
+                            "Mem {:.1} KB",
+                            procinfo::pid::statm_self().unwrap().size as f32 / 1024.0
+                        ));
+                    });
+                });
             });
 
             // Check if the GUI is using pointer
@@ -236,6 +259,8 @@ impl State {
 
     /// Process user inputs
     fn input(&mut self) {
+        self.is_idle = true;
+
         if !self.is_on_gui {
             // On mouse down
             if is_mouse_button_down(MouseButton::Left)
@@ -261,6 +286,8 @@ impl State {
                         self.painted_cells.dedup();
                     }
                 }
+
+                self.is_idle = false;
             }
             // On mouse up
             if is_mouse_button_released(MouseButton::Left)
@@ -277,6 +304,8 @@ impl State {
                     &self.grid);
                 // Clear the painted cells list
                 self.painted_cells.clear();
+
+                self.is_idle = false;
             }
 
             // Scroll handling
@@ -288,6 +317,7 @@ impl State {
             // Panning (Space)
             if is_key_pressed(KeyCode::Space) {
                 self.pan_pos = mouse_position();
+                self.is_idle = false;
             }
 
             if is_key_down(KeyCode::Space) {
@@ -297,6 +327,7 @@ impl State {
                 self.pan_offset.1 += (y - self.pan_pos.1) * 0.5;
 
                 self.pan_pos = (x, y);
+                self.is_idle = false;
             }
 
             // Undo and redo (Ctrl + Z and Ctrl + Shift + Z)
@@ -319,14 +350,17 @@ impl State {
                         }.as_str(),
                         3.0);
                 }
+                self.is_idle = false;
             }
 
             // Zoom (Equal and Minus)
             if is_key_pressed(KeyCode::Equal) {
                 self.zoom += 4;
+                self.is_idle = false;
             }
             if is_key_pressed(KeyCode::Minus) {
                 self.zoom -= 4;
+                self.is_idle = false;
             }
         }
     }
