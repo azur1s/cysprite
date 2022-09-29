@@ -24,7 +24,7 @@ impl Grid {
         self.cells[y * self.width + x]
     }
 
-    // Set the cell color at the given coordinates.
+    /// Set the cell color at the given coordinates.
     pub fn set(&mut self, x: usize, y: usize, color: [u8; 4]) {
         // If the coordinates is out of bounds or the color is transparent, do nothing
         if x >= self.width || y >= self.height || color[3] == 0 {
@@ -56,17 +56,18 @@ impl Grid {
         self.cells[y * self.width + x] = [0, 0, 0, 0];
     }
 
-    /// Clear all cells (set all cells to transparent)
+    /// Clear all cells (set all cells to transparent).
     pub fn clear(&mut self) {
         for cell in self.cells.iter_mut() {
             *cell = [0, 0, 0, 0];
         }
     }
 
-    /// Replace with another grid
+    /// Replace with another grid.
     pub fn replace(&mut self, grid: &Grid) {
         self.width = grid.width;
         self.height = grid.height;
         self.cells = grid.cells.clone();
     }
 }
+
