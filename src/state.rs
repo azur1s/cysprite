@@ -71,6 +71,10 @@ pub struct State {
     /// Status message
     #[derivative(Default(value = "StatusMessage::new()"))]
     status: StatusMessage,
+    /// Frame per second display
+    #[derivative(Default(value = "0"))]
+    fps: u32,
+    last_fps_update: f64,
 }
 
 impl State {
@@ -111,6 +115,12 @@ impl State {
             (screen_height() - self.grid.height as f32 * self.zoom as f32) / 2.0,
         );
         self.grid_offset = (middle_offset.0 + self.pan_offset.0, middle_offset.1 + self.pan_offset.1);
+
+        // Update Fps every second
+        if get_time() - self.last_fps_update > 1.0 {
+            self.fps = get_fps() as u32;
+            self.last_fps_update = get_time();
+        }
 
         self.status.update(get_frame_time());
 
@@ -259,7 +269,8 @@ impl State {
                     ui.label(format!("{}", self.status.get()));
                     ui.with_layout(egui::Layout::right_to_left(), |ui| {
                         ui.label(format!(
-                            "Mem {:.1} KB",
+                            "Fps: {}, Mem: {:.1} KB",
+                            self.fps,
                             procinfo::pid::statm_self().unwrap().size as f32 / 1024.0
                         ));
                     });
