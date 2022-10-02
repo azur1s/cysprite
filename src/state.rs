@@ -1,5 +1,10 @@
 use derivative::Derivative;
 use macroquad::prelude::*;
+use egui::{
+    FontFamily::Proportional,
+    FontId
+};
+use egui::TextStyle::*;
 
 use crate::compact;
 use crate::util::{ rgba_to_hex, hex_to_rgba };
@@ -7,6 +12,12 @@ use crate::util::{ rgba_to_hex, hex_to_rgba };
 use crate::grid::Grid;
 use crate::undo::{ Undo, Action };
 use crate::status_message::StatusMessage;
+
+#[derive(PartialEq)]
+enum FileType {
+    Ron,
+    Png,
+}
 
 #[derive(Derivative)]
 #[derivative(Default)]
@@ -16,6 +27,11 @@ pub struct State {
     #[derivative(Debug = "ignore")]
     #[derivative(Default(value = "Grid::new(16, 16)"))]
     grid: Grid,
+    /// File path
+    file_path: String,
+    /// File type
+    #[derivative(Default(value = "FileType::Ron"))]
+    file_type: FileType,
     /// A vector containing all cell's coordinates that have
     /// been modified at this frame.
     painted_cells: Vec<(usize, usize)>,
@@ -38,6 +54,9 @@ pub struct State {
     undo: Undo,
 
     // ---------- [ UI ] ----------
+    /// The egui's style
+    #[derivative(Default(value = "egui::Style::default()"))]
+    style: egui::Style,
     /// Zoom level
     #[derivative(Default(value = "32"))]
     zoom: i32,
@@ -52,12 +71,27 @@ pub struct State {
     /// Status message
     #[derivative(Default(value = "StatusMessage::new()"))]
     status: StatusMessage,
+    /// Frame per second display
+    #[derivative(Default(value = "0"))]
+    fps: u32,
+    last_fps_update: f64,
 }
 
 impl State {
     pub fn new() -> Self { Self::default() }
 
     pub fn init(&mut self) {
+        self.style.text_styles = [
+            (Heading, FontId::new(24.0, Proportional)),
+            (Body, FontId::new(20.0, Proportional)),
+            (Monospace, FontId::new(20.0, Proportional)),
+            (Button, FontId::new(20.0, Proportional)),
+            (Small, FontId::new(20.0, Proportional)),
+        ].into();
+
+        self.style.spacing.item_spacing = [8.0, 8.0].into();
+        self.style.spacing.window_margin = egui::style::Margin::same(8.0);
+
         self.status.set("Welcome to Harcana!", 5.0);
     }
 
@@ -81,6 +115,12 @@ impl State {
             (screen_height() - self.grid.height as f32 * self.zoom as f32) / 2.0,
         );
         self.grid_offset = (middle_offset.0 + self.pan_offset.0, middle_offset.1 + self.pan_offset.1);
+
+        // Update Fps every second
+        if get_time() - self.last_fps_update > 1.0 {
+            self.fps = get_fps() as u32;
+            self.last_fps_update = get_time();
+        }
 
         self.status.update(get_frame_time());
 
@@ -132,29 +172,50 @@ impl State {
 
         // Process UI
         egui_macroquad::ui(|ctx| {
-            // Styling
-            use egui::{
-                FontFamily::Proportional,
-                FontId
-            };
-            use egui::TextStyle::*;
-
-            let mut style = (*ctx.style()).clone();
-            style.text_styles = [
-                (Heading, FontId::new(24.0, Proportional)),
-                (Body, FontId::new(20.0, Proportional)),
-                (Monospace, FontId::new(20.0, Proportional)),
-                (Button, FontId::new(20.0, Proportional)),
-                (Small, FontId::new(20.0, Proportional)),
-            ].into();
-
-            style.spacing.item_spacing = [8.0, 8.0].into();
-            style.spacing.window_margin = egui::style::Margin::same(8.0);
-
-            ctx.set_style(style);
+            ctx.set_style(self.style.clone());
 
             // Panels
-            let grid_actions = egui::Window::new("Grid Actions").show(ctx, |ui| {
+            fn make_window(
+                title: &str, ctx: &egui::Context, content: impl FnOnce(&mut egui::Ui)
+            ) -> Option<egui::InnerResponse<Option<()>>> {
+                egui::Window::new(title)
+                    .resizable(false)
+                    .collapsible(false)
+                    .show(ctx, content)
+            }
+
+            let file_actions = make_window("File", ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Save as:");
+                    ui.add(egui::TextEdit::singleline(&mut self.file_path)
+                           .desired_width(100.0));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("File type");
+                    ui.selectable_value(&mut self.file_type, FileType::Ron, "Ron");
+                    ui.selectable_value(&mut self.file_type, FileType::Png, "Png");
+                });
+
+                if ui.button("Save").clicked() {
+                    match self.file_type {
+                        FileType::Ron => {
+                            match self.grid.save_as_ron(&self.file_path) {
+                                Ok(_) => self.status.set("Saved as .ron", 5.0),
+                                Err(e) => self.status.set(&format!("Error: {}", e), 5.0),
+                            }
+                        }
+                        FileType::Png => {
+                            match self.grid.save_as_png(&self.file_path) {
+                                Ok(_) => self.status.set("Saved as .png", 5.0),
+                                Err(e) => self.status.set(&format!("Error: {}", e), 5.0),
+                            }
+                        }
+                    }
+                }
+            });
+
+            let grid_actions = make_window("Grid", ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.label("Zoom");
                     ui.add(egui::DragValue::new(&mut self.zoom)
@@ -168,7 +229,7 @@ impl State {
                 }
             });
 
-            let colors = egui::Window::new("Colors").show(ctx, |ui| {
+            let colors = make_window("Colors", ctx, |ui| {
                 // Macros for adding color inputs
                 macro_rules! color_input {
                     ($ui: expr, $color: expr, $color_input: expr) => {
@@ -208,7 +269,8 @@ impl State {
                     ui.label(format!("{}", self.status.get()));
                     ui.with_layout(egui::Layout::right_to_left(), |ui| {
                         ui.label(format!(
-                            "Mem {:.1} KB",
+                            "Fps: {}, Mem: {:.1} KB",
+                            self.fps,
                             procinfo::pid::statm_self().unwrap().size as f32 / 1024.0
                         ));
                     });
@@ -231,8 +293,9 @@ impl State {
             // Check if the GUI is requesting input
             // so that it blocks the mouse from drawing
             [
-                colors,
+                file_actions,
                 grid_actions,
+                colors,
             ].iter().for_each(|panel| {
                 if let Some(panel) = panel {
                     checks_request!(panel);
