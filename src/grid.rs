@@ -1,4 +1,9 @@
-#[derive(Clone)]
+use std::fs;
+
+use serde::{ Serialize, Deserialize };
+use ron::ser::{ to_string };
+
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Grid {
     pub width: usize,
     pub height: usize,
@@ -68,6 +73,33 @@ impl Grid {
         self.width = grid.width;
         self.height = grid.height;
         self.cells = grid.cells.clone();
+    }
+
+    /// Save file as RON format.
+    pub fn save_as_ron(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let ron = to_string(self)?;
+        fs::write(&path, ron)?;
+        Ok(())
+    }
+
+    /// Load RON file into a grid.
+    pub fn load_ron(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let ron = fs::read_to_string(path)?;
+        let grid: Grid = ron::from_str(&ron)?;
+        Ok(grid)
+    }
+
+    /// Save file as PNG format.
+    pub fn save_as_png(&self, path: &str) -> Result<(), png::EncodingError> {
+        let ref mut w = std::io::BufWriter::new(fs::File::create(path)?);
+        let mut encoder = png::Encoder::new(w, self.width as u32, self.height as u32);
+
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+
+        let mut writer = encoder.write_header()?;
+        let data: Vec<u8> = self.cells.iter().flat_map(|c| c.iter()).cloned().collect();
+        writer.write_image_data(&data)
     }
 }
 
