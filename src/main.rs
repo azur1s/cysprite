@@ -20,9 +20,6 @@ async fn main() {
         state.update();
         egui_macroquad::draw();
 
-        std::thread::sleep(std::time::Duration::from_millis(
-            if state.is_idle { 60 } else { 15 },
-        ));
         next_frame().await
     }
 }
