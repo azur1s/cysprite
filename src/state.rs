@@ -50,6 +50,9 @@ pub struct State {
     /// Secondary color's text input string
     secondary_color_input: String,
 
+    #[derivative(Default(value = "Image::empty()"))]
+    render: Image,
+
     // ---------- [ Undo ] ----------
     /// The undo stack.
     #[derivative(Debug = "ignore")]
@@ -84,6 +87,12 @@ impl State {
     pub fn new() -> Self { Self::default() }
 
     pub fn init(&mut self) {
+        self.render = Image::gen_image_color(
+            self.grid.width as u16,
+            self.grid.height as u16,
+            Color::from_rgba(0, 0, 0, 0)
+        );
+
         self.style.text_styles = [
             (Heading, FontId::new(24.0, Proportional)),
             (Body, FontId::new(20.0, Proportional)),
@@ -136,34 +145,32 @@ impl State {
         clear_background(Color::from_rgba(10, 12, 14, 255));
         let border_color = Color::from_rgba(68, 81, 94, 255);
 
-        // Grid cells
         (0..self.grid.width).for_each(|x| {
             (0..self.grid.height).for_each(|y| {
                 let cell_color = self.grid.get(x, y);
-                let (x, y, w, h) = (
-                    self.grid_offset.0 + x as f32 * self.zoom as f32, self.grid_offset.1 + y as f32 * self.zoom as f32,
-                    self.zoom as f32, self.zoom as f32,
+                self.render.set_pixel(
+                    x as u32,
+                    y as u32,
+                    compact!(cell_color)
                 );
-                let (w_half, h_half) = (w / 2.0, h / 2.0);
-
-                match cell_color[3] {
-                    // Draw checkerboard pattern for translucent cells
-                    0..=254 => {
-                        let light = Color::from_rgba(198, 202, 206, 255);
-                        let dim = Color::from_rgba(161, 168, 174, 255);
-
-                        draw_rectangle(x, y, w_half, h_half, light);
-                        draw_rectangle(x, y + h_half, w_half, h_half, dim);
-                        draw_rectangle(x + w_half, y, w_half, h_half, dim);
-                        draw_rectangle(x + w_half, y + h_half, w_half, h_half, light);
-                        draw_rectangle(x, y, w, h, compact!(cell_color));
-                    }
-                    255 => {
-                        draw_rectangle(x, y, w, h, compact!(cell_color));
-                    }
-                }
             });
         });
+
+        let t = Texture2D::from_image(&self.render);
+        t.set_filter(FilterMode::Nearest);
+        draw_texture_ex(
+            t,
+            self.grid_offset.0,
+            self.grid_offset.1,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(
+                    self.grid.width as f32 * self.zoom as f32,
+                    self.grid.height as f32 * self.zoom as f32,
+                )),
+                ..Default::default()
+            }
+        );
 
         // Grid border lines
         draw_rectangle_lines(
@@ -243,6 +250,11 @@ impl State {
                             &self.grid,
                         );
                         self.grid.resize(self.grid_size.0, self.grid_size.1);
+                        self.render = Image::gen_image_color(
+                            self.grid_size.0 as u16,
+                            self.grid_size.1 as u16,
+                            Color::from_rgba(0, 0, 0, 0),
+                        );
                     }
                 });
 
@@ -427,6 +439,12 @@ impl State {
             }
             if is_key_pressed(KeyCode::Minus) {
                 self.zoom -= 4;
+            }
+
+            // Reset zoom and pan
+            if is_key_pressed(KeyCode::F) {
+                self.zoom = 16;
+                self.pan_offset = (0.0, 0.0);
             }
         }
     }
