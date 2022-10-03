@@ -4,6 +4,7 @@ use crate::grid::Grid;
 
 pub enum Action {
     Paint(Vec<(usize, usize)>, [u8; 4]),
+    Resize(usize, usize),
     Clear,
 }
 
@@ -11,6 +12,7 @@ impl std::fmt::Display for Action {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Action::Paint(g, _) => write!(f, "paint {} cells", g.len()),
+            Action::Resize(w, h) => write!(f, "resize to {}x{}", w, h),
             Action::Clear => write!(f, "clear"),
         }
     }
@@ -61,6 +63,9 @@ impl Undo {
                     }
                 }
             }
+            (g, Action::Resize(_, _)) => {
+                grid.resize(g.width, g.height);
+            }
             (_, Action::Clear) => {
                 if self.pointer == 0 { return None; }
                 // If the action is clear, then just copy the previous grid
@@ -84,6 +89,9 @@ impl Undo {
                 for (x, y) in coords {
                     grid.set(*x, *y, *color);
                 }
+            }
+            (_, Action::Resize(w, h)) => {
+                grid.resize(*w, *h);
             }
             (_, Action::Clear) => {
                 grid.clear();

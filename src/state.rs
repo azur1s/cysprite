@@ -235,6 +235,10 @@ impl State {
                         .speed(1.0)
                         .clamp_range(1..=4096));
                     if ui.button("Resize").clicked() {
+                        self.undo.push(
+                            Action::Resize(self.grid_size.0, self.grid_size.1),
+                            &self.grid,
+                        );
                         self.grid.resize(self.grid_size.0, self.grid_size.1);
                     }
                 });
