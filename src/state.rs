@@ -234,7 +234,10 @@ impl State {
                     ui.add(egui::DragValue::new(&mut self.grid_size.1)
                         .speed(1.0)
                         .clamp_range(1..=4096));
+
                     if ui.button("Resize").clicked() {
+                        // Save the current grid into undo stack
+                        // before mutating the grid
                         self.undo.push(
                             Action::Resize(self.grid_size.0, self.grid_size.1),
                             &self.grid,

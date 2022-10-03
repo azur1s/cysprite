@@ -64,6 +64,7 @@ impl Undo {
                 }
             }
             (g, Action::Resize(_, _)) => {
+                // Resize to the previous grid
                 grid.resize(g.width, g.height);
             }
             (_, Action::Clear) => {
@@ -91,6 +92,7 @@ impl Undo {
                 }
             }
             (_, Action::Resize(w, h)) => {
+                // Resize to the following grid
                 grid.resize(*w, *h);
             }
             (_, Action::Clear) => {
