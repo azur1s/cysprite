@@ -75,6 +75,19 @@ impl Grid {
         self.cells = grid.cells.clone();
     }
 
+    /// Resize grid with empty cells
+    pub fn resize(&mut self, width: usize, height: usize) {
+        let mut new_cells = vec![[0, 0, 0, 0]; width * height];
+        for y in 0..self.height.min(height) {
+            for x in 0..self.width.min(width) {
+                new_cells[y * width + x] = self.get(x, y);
+            }
+        }
+        self.width = width;
+        self.height = height;
+        self.cells = new_cells;
+    }
+
     /// Save file as RON format.
     pub fn save_as_ron(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let ron = to_string(self)?;

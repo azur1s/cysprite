@@ -27,6 +27,9 @@ pub struct State {
     #[derivative(Debug = "ignore")]
     #[derivative(Default(value = "Grid::new(16, 16)"))]
     grid: Grid,
+    /// Grid size (doesn't mutate the grid directly)
+    #[derivative(Default(value = "(16, 16)"))]
+    grid_size: (usize, usize),
     /// File path
     file_path: String,
     /// File type
@@ -221,6 +224,19 @@ impl State {
                     ui.add(egui::DragValue::new(&mut self.zoom)
                         .speed(1.0)
                         .clamp_range(4..=64));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("Size");
+                    ui.add(egui::DragValue::new(&mut self.grid_size.0)
+                        .speed(1.0)
+                        .clamp_range(1..=4096));
+                    ui.add(egui::DragValue::new(&mut self.grid_size.1)
+                        .speed(1.0)
+                        .clamp_range(1..=4096));
+                    if ui.button("Resize").clicked() {
+                        self.grid.resize(self.grid_size.0, self.grid_size.1);
+                    }
                 });
 
                 if ui.button("Clear Grid").clicked() {
