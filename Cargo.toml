@@ -11,6 +11,3 @@ egui = "0.18"
 egui-macroquad = "0.11"
 
 derivative = "2.2"
-
-discord-rpc-client = "0.3"
-chrono = "0.4.22"

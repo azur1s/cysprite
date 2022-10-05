@@ -21,6 +21,9 @@ pub struct State {
     /// The current color for painting.
     #[derivative(Default(value = "Color::from_rgba(255, 255, 255, 255)"))]
     color: Color,
+    /// The current brush size.
+    #[derivative(Default(value = "1"))]
+    brush_size: i32,
 
     /// Offsets and zoom.
     offsets: offsets::Offsets,
@@ -33,14 +36,12 @@ pub struct State {
 
 impl State {
     pub fn new() -> State {
-        let mut s = State {
-            tex: Image::gen_image_color(
-                16,
-                16,
-                Color::from_rgba(0, 0, 0, 0),
-            ),
-            ..Default::default()
-        };
+        let mut s = State::default();
+        s.tex = Image::gen_image_color(
+            s.tex_size.0 as u16,
+            s.tex_size.1 as u16,
+            Color::from_rgba(0, 0, 0, 0),
+        );
         s.init_ui();
         s
     }

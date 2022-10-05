@@ -27,7 +27,7 @@ impl State {
                 let y = (y - self.offsets.grid_offset.y) as i32 / self.offsets.zoom as i32;
 
                 if !self.inputs.painted_cells.contains(&(x as u32, y as u32)) {
-                    self.tex_paint_single(x, y, self.color);
+                    self.tex_paint_square(x, y, self.brush_size, self.color);
                     self.inputs.painted_cells.push((x as u32, y as u32));
                 }
             }
@@ -53,8 +53,10 @@ impl State {
         }
 
         // Zooming
-        self.offsets.zoom += mouse_wheel().1 as i8;
-        self.offsets.zoom = self.offsets.zoom.clamp(4, 64);
+        if is_key_down(KeyCode::LeftShift) {
+            self.offsets.zoom += mouse_wheel().1 as i8;
+            self.offsets.zoom = self.offsets.zoom.clamp(4, 64);
+        }
 
         // ----- Keyboard section -----
 
@@ -62,6 +64,17 @@ impl State {
         if is_key_pressed(KeyCode::F) {
             self.offsets.zoom = 32;
             self.offsets.pan_offset = vec2(0.0, 0.0);
+        }
+
+        // Brush size
+        if is_key_pressed(KeyCode::I) {
+            self.brush_size += 1;
+            self.brush_size = self.brush_size.clamp(1, 128);
+        }
+
+        if is_key_pressed(KeyCode::O) {
+            self.brush_size -= 1;
+            self.brush_size = self.brush_size.clamp(1, 128);
         }
     }
 }

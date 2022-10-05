@@ -58,6 +58,9 @@ impl State {
                     // Color picker
                     color_picker::color_picker_color32(ui, &mut c, color_picker::Alpha::OnlyBlend);
                 });
+
+                ui.add(egui::widgets::Slider::new(&mut self.brush_size, 1..=128)
+                    .text("Brush size"));
             });
 
         let v: [u8; 4] = c.to_srgba_unmultiplied();
