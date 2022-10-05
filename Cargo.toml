@@ -1,5 +1,5 @@
 [package]
-name = "cysprite-r"
+name = "cysprite"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,3 +11,6 @@ egui = "0.18"
 egui-macroquad = "0.11"
 
 derivative = "2.2"
+
+discord-rpc-client = "0.3"
+chrono = "0.4.22"
