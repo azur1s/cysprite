@@ -1,24 +1,13 @@
+pub mod state;
+
 use macroquad::prelude::*;
 
-mod util;
-
-mod grid;
-mod undo;
-mod status_message;
-
-mod state;
-
-use state::State;
-
-#[macroquad::main("cysprite")]
+#[macroquad::main("Cysprite")]
 async fn main() {
-
-    let mut state = State::new();
-    state.init();
+    let mut state = state::State::new();
 
     loop {
         state.update();
-        egui_macroquad::draw();
 
         next_frame().await
     }

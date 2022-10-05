@@ -1,5 +1,5 @@
 [package]
-name = "cysprite"
+name = "cysprite-r"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,7 +12,3 @@ egui-macroquad = "0.11"
 
 derivative = "2.2"
 procinfo = "0.4.2"
-
-serde = { version = "1.0.145", features = ["derive"] }
-png = "0.17.6"
-ron = "0.8"
