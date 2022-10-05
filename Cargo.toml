@@ -11,4 +11,3 @@ egui = "0.18"
 egui-macroquad = "0.11"
 
 derivative = "2.2"
-procinfo = "0.4.2"

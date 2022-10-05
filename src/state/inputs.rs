@@ -14,6 +14,7 @@ pub struct Inputs {
 impl State {
     /// Handle all inputs
     pub fn input(&mut self) {
+        if self.is_ui_focused { return; } // Don't handle inputs if UI is focused
         // ----- Mouse section -----
 
         // Painting
@@ -30,6 +31,10 @@ impl State {
                     self.inputs.painted_cells.push((x as u32, y as u32));
                 }
             }
+        }
+
+        if is_mouse_button_released(MouseButton::Left) {
+            self.inputs.painted_cells.clear();
         }
 
         // Panning

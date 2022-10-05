@@ -7,27 +7,17 @@ impl State {
         if x < 0 || y < 0 || x as u32 >= self.tex_size.0 || y as u32 >= self.tex_size.1 {
             return;
         }
-        self.tex.set_pixel(
-            x as u32,
-            y as u32,
-            color,
-        );
+        self.tex.set_pixel(x as u32, y as u32, color);
     }
 
     pub fn tex_render(&mut self) {
-        // Transparent checkerboard background
-        draw_texture_ex(
-            self.transparent_bg,
+        // Transparent background
+        draw_rectangle(
             self.offsets.grid_offset.x,
             self.offsets.grid_offset.y,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(
-                    self.tex_size.0 as f32 * self.offsets.zoom as f32,
-                    self.tex_size.1 as f32 * self.offsets.zoom as f32,
-                )),
-                ..Default::default()
-            },
+            self.tex_size.0 as f32 * self.offsets.zoom as f32,
+            self.tex_size.1 as f32 * self.offsets.zoom as f32,
+            Color::from_rgba(128, 128, 128, 255),
         );
 
         // The main texture
@@ -52,8 +42,8 @@ impl State {
             self.offsets.grid_offset.y,
             self.tex_size.0 as f32 * self.offsets.zoom as f32,
             self.tex_size.1 as f32 * self.offsets.zoom as f32,
-            1.0,
-            WHITE,
+            4.0,
+            Color::from_rgba(237, 237, 237, 255),
         );
     }
 }

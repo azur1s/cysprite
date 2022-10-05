@@ -25,7 +25,7 @@ impl State {
             (screen_height() - self.tex_size.1 as f32 * self.offsets.zoom as f32) / 2.0,
         );
         self.offsets.grid_offset = vec2(
-            middle_offset.0 + self.offsets.pan_offset.x,
+            middle_offset.0 + self.offsets.pan_offset.x + (self.ui.width / 2.0),
             middle_offset.1 + self.offsets.pan_offset.y,
         );
     }

@@ -9,6 +9,7 @@ async fn main() {
     loop {
         state.update();
 
+        egui_macroquad::draw();
         next_frame().await
     }
 }
