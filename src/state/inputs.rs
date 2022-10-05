@@ -12,8 +12,11 @@ pub struct Inputs {
 }
 
 impl State {
-    /// Handle all mouse inputs
-    pub fn input_mouse(&mut self) {
+    /// Handle all inputs
+    pub fn input(&mut self) {
+        // ----- Mouse section -----
+
+        // Painting
         if is_mouse_button_down(MouseButton::Left) {
             let (x, y) = mouse_position();
 
@@ -25,9 +28,35 @@ impl State {
                 if !self.inputs.painted_cells.contains(&(x as u32, y as u32)) {
                     self.tex_paint_single(x, y, self.color);
                     self.inputs.painted_cells.push((x as u32, y as u32));
-                    println!("Painted cell: {}, {}", x, y);
                 }
             }
+        }
+
+        // Panning
+        if is_mouse_button_pressed(MouseButton::Right) {
+            let (x, y) = mouse_position();
+            self.offsets.pan_pos = vec2(x, y);
+        }
+
+        if is_mouse_button_down(MouseButton::Right) {
+            let (x, y) = mouse_position();
+
+            self.offsets.pan_offset.x += (x - self.offsets.pan_pos.x) * 0.5;
+            self.offsets.pan_offset.y += (y - self.offsets.pan_pos.y) * 0.5;
+
+            self.offsets.pan_pos = vec2(x, y);
+        }
+
+        // Zooming
+        self.offsets.zoom += mouse_wheel().1 as i8;
+        self.offsets.zoom = self.offsets.zoom.clamp(4, 64);
+
+        // ----- Keyboard section -----
+
+        // Reset zoom and pan
+        if is_key_pressed(KeyCode::F) {
+            self.offsets.zoom = 32;
+            self.offsets.pan_offset = vec2(0.0, 0.0);
         }
     }
 }

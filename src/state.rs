@@ -1,6 +1,7 @@
 use derivative::Derivative;
 use macroquad::prelude::*;
 
+mod ui;
 mod tex;
 mod offsets;
 mod inputs;
@@ -30,6 +31,8 @@ pub struct State {
     offsets: offsets::Offsets,
     /// Mouse and keyboard inputs.
     inputs: inputs::Inputs,
+    /// User interface (egui)
+    ui: ui::Ui,
 }
 
 impl State {
@@ -52,6 +55,6 @@ impl State {
 
         self.update_grid_offset();
         self.tex_render();
-        self.input_mouse();
+        self.input();
     }
 }

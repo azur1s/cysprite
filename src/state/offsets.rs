@@ -11,6 +11,8 @@ pub struct Offsets {
     pub zoom: i8,
     /// The pan offset relative to the center of the screen.
     pub pan_offset: Vec2,
+    /// Grid pan offset relative to the mouse position this frame.
+    pub pan_pos: Vec2,
     /// Total grid offsets.
     pub grid_offset: Vec2,
 }
